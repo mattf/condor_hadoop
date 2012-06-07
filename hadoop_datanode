@@ -1,0 +1,113 @@
+#!/usr/bin/ruby
+
+require 'optparse'
+require 'numeric_duration'
+require 'numeric_state_name'
+
+
+def list(options)
+  filter = options[:id].nil? ? '' : %{&& NameNode =?= #{options[:id]}}
+  IO.popen(%{condor_q -constraint 'HadoopType =?= "DataNode" #{filter}' \
+                      -format "%d," ClusterId \
+                      -format "%d," QDate \
+                      -format "%d," JobStatus \
+                      -format "%d," EnteredCurrentStatus \
+                      -format "%s," Owner \
+                      -format "%d," NameNode \
+                      -format "%s\n" NameNodeHTTPAddress}) do |sub|
+    printf "  ID    Submitted   Status       Uptime      Owner  NameNode\n"
+    sub.each do |line|
+      id, qdate, status, time, owner, namenode_id, http = line.chomp.split(",")
+      printf "%4d %12s %8s %12s %10.9s  %d @ %s\n",
+             id,
+             Time.at(qdate.to_i).strftime("%d/%m %H:%I"),
+             status.to_i.state_name,
+             status.to_i == 2 ? (Time.now()-time.to_i).to_i.duration : "N/A",
+             owner, namenode_id, http
+    end
+  end
+end
+
+
+def start(options)
+  namenode_id = options[:id]
+
+  ipc = http = nil
+  tries = 0
+  until not ipc.nil? or tries >= 3
+    # XXX: Race - IPC & HTTP are not set atomically
+    IO.popen(%{condor_q -constraint 'ClusterId == #{namenode_id}' \
+                        -format "%s," NameNodeIPCAddress \
+                        -format "%s" NameNodeHTTPAddress \
+                        -format "\n" TRUE }) do |sub|
+      tries+=1
+      sub.each do |line|
+        if line.chomp != ","
+          ipc, http = line.chomp.split(",")
+        end
+      end
+      sleep 3
+    end
+  end
+
+  if ipc.nil?
+    puts "Could not find IPC address for #{namenode_id}, make sure it is running."
+    exit
+  end
+
+  puts "Found NameNode at #{ipc}"
+
+  IO.popen(%{condor_submit -a '+HadoopType="DataNode"' -a "+NameNode=#{namenode_id}" -a '+NameNodeHTTPAddress="#{http}"' -a NameNodeAddress=#{ipc} hdfs_datanode.job}) do |sub|
+    sub.each do |line|
+      puts line
+    end
+  end
+end
+
+
+def stop(options)
+  IO.popen(%{condor_rm -constraint 'ClusterId == #{options[:id]}'}) do |sub|
+    sub.each do |line|
+      puts line
+    end
+  end
+end
+
+
+options = {}
+
+optparse = OptionParser.new do |opts|
+  opts.banner = "usage: #{$0} [options]"
+  opts.on("-l", "--list[=NameNode ID]", Numeric, "List DataNodes, optionally of a NameNode") do |v|
+    options[:action] = :list
+    options[:id] = v.to_i if not v.nil?
+  end
+  opts.on("-s", "--start=ID", "Start a new DataNode, attached to given NameNode") do |v|
+    options[:action] = :start
+    options[:id] = v.to_i
+  end
+  opts.on("-e", "--stop=ID", Numeric, "Stop a NameNode") do |v|
+    options[:action] = :stop
+    options[:id] = v.to_i
+  end
+  opts.on("-h", "--help", "Show this message") do
+    puts opts
+    exit
+  end
+end
+
+begin
+  optparse.parse!
+  if options[:action].nil?
+    puts optparse
+    exit
+  end
+rescue OptionParser::InvalidOption,
+       OptionParser::InvalidArgument,
+       OptionParser::MissingArgument
+  puts $!.to_s
+  puts optparse
+  exit
+end
+
+send options[:action], options

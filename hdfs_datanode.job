@@ -1,0 +1,27 @@
+# Submit w/ condor_submit -a NameNodeAddress=<address>
+# e.g. <address> = hdfs://$HOSTNAME:2007
+
+cmd = hdfs_datanode.sh
+args = hadoop-1.0.1-bin.tar.gz $(NameNodeAddress)
+
+transfer_input_files = hadoop-1.0.1-bin.tar.gz
+
+# RFE: Ability to get output files even when job is removed
+#transfer_output_files = logs.tgz
+#transfer_output_remaps = "logs.tgz logs.$(cluster).tgz"
+output = datanode.$(cluster).out
+error = datanode.$(cluster).err
+
+log = datanode.$(cluster).log
+
+kill_sig = SIGTERM
+
+# Want chirp functionality
++WantIOProxy = TRUE
+
+should_transfer_files = yes
+when_to_transfer_output = on_exit
+
+requirements = HasJava =?= TRUE
+
+queue
