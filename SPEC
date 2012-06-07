@@ -44,7 +44,7 @@ hadoop_datanode --stop <id>
 hadoop_jobtracker
  --list
  --ipc <id>
- --start
+ --start <namenode id>
  --stop <id>
 
 hadoop_jobtracker --list
@@ -53,8 +53,9 @@ hadoop_jobtracker --list
 hadoop_jobtracker --ipc <id>
  -> condor_q -constraint 'ClusterId == <id>' -format ...
 
-hadoop_jobtracker --start
- : condor_submit -a '+HadoopType="JobTacker"' ...
+hadoop_jobtracker --start <namenode id>
+ : condor_q -format "%s" NameNodeAddress <namenode id>  !retry!
+ : condor_submit -a '+HadoopType="JobTracker"' -a '+NameNode = <namenode id>' -a NameNodeAddress=^^ ...
  -> id  ?wait for endpoint?
 
 hadoop_jobtracker --stop <id>
