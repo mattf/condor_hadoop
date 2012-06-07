@@ -57,7 +57,7 @@ end
 
 
 def start(options)
-  IO.popen(%{condor_submit -a '+HadoopType="NameNode"' hdfs_namenode.job}) do |sub|
+  IO.popen(%{condor_submit hdfs_namenode.job}) do |sub|
     sub.each do |line|
       puts line
     end

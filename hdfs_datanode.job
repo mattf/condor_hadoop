@@ -1,6 +1,8 @@
 # Submit w/ condor_submit -a NameNodeAddress=<address>
 # e.g. <address> = hdfs://$HOSTNAME:2007
 
++HadoopType = "DataNode"
+
 cmd = hdfs_datanode.sh
 args = hadoop-1.0.1-bin.tar.gz $(NameNodeAddress)
 

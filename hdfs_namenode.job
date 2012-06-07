@@ -1,3 +1,5 @@
++HadoopType = "NameNode"
+
 cmd = hdfs_namenode.sh
 args = hadoop-1.0.1-bin.tar.gz
 

@@ -57,7 +57,7 @@ def start(options)
 
   puts "Found NameNode at #{ipc}"
 
-  IO.popen(%{condor_submit -a '+HadoopType="DataNode"' -a "+NameNode=#{namenode_id}" -a '+NameNodeHTTPAddress="#{http}"' -a NameNodeAddress=#{ipc} hdfs_datanode.job}) do |sub|
+  IO.popen(%{condor_submit -a "+NameNode=#{namenode_id}" -a '+NameNodeHTTPAddress="#{http}"' -a NameNodeAddress=#{ipc} hdfs_datanode.job}) do |sub|
     sub.each do |line|
       puts line
     end
