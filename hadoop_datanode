@@ -21,7 +21,7 @@ def list(options)
       id, qdate, status, time, owner, namenode_id, http = line.chomp.split(",")
       printf "%4d %12s %8s %12s %10.9s  %d @ %s\n",
              id,
-             Time.at(qdate.to_i).strftime("%d/%m %H:%I"),
+             Time.at(qdate.to_i).strftime("%d/%m %H:%M"),
              status.to_i.state_name,
              status.to_i == 2 ? (Time.now()-time.to_i).to_i.duration : "N/A",
              owner, namenode_id, http
