@@ -1,0 +1,21 @@
+cmd = hdfs_namenode.sh
+args = hadoop-1.0.1-bin.tar.gz
+
+transfer_input_files = hadoop-1.0.1-bin.tar.gz
+
+#output = namenode.$(cluster).out
+#error = namenode.$(cluster).err
+
+log = namenode.$(cluster).log
+
+kill_sig = SIGTERM
+
+# Want chirp functionality
++WantIOProxy = TRUE
+
+should_transfer_files = yes
+when_to_transfer_output = on_exit
+
+requirements = HasJava =?= TRUE
+
+queue
