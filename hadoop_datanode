@@ -14,7 +14,8 @@ def list(options)
                       -format "%d," EnteredCurrentStatus \
                       -format "%s," Owner \
                       -format "%d," NameNode \
-                      -format "%s\n" NameNodeHTTPAddress}) do |sub|
+                      -format "%s" NameNodeHTTPAddress \
+                      -format "\n" TRUE}) do |sub|
     printf "  ID    Submitted   Status       Uptime      Owner  NameNode\n"
     sub.each do |line|
       id, qdate, status, time, owner, namenode_id, http = line.chomp.split(",")
