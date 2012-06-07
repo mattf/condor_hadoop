@@ -1,0 +1,150 @@
+#!/usr/bin/ruby
+
+require 'optparse'
+
+
+def list(options)
+  IO.popen(%{
+     condor_q -constraint 'HadoopType =?= "JobTracker"' \
+              -format "%4d" ClusterId \
+              -format " %12s" 'formatTime(QDate, "%d/%m %H:%I")' \
+              -format " %8s" 'ifThenElse(JobStatus == 1, "Pending", 
+                                        ifThenElse(JobStatus == 2, "Running",
+                                          ifThenElse(JobStatus == 3 || JobStatus == 4,
+                                                     "Exiting",
+                                                     "Error")))' \
+              -format " %12s" 'ifThenElse(JobStatus == 2,
+                                                  interval(time() - EnteredCurrentStatus),
+                                                  "N/A")' \
+              -format " %10.9s" Owner \
+              -format "  %s" 'ifThenElse(JobTrackerHTTPAddress =?= UNDEFINED || JobStatus =!= 2,
+                                                "N/A",
+                                                JobTrackerHTTPAddress)' \
+              -format "\n" TRUE}) do |sub|
+    printf "  ID    Submitted   Status       Uptime      Owner  Location\n"
+    sub.each do |line|
+      puts line
+    end
+  end
+end
+
+
+def ipc(options)
+  ipc = nil
+  tries = 0
+  until not ipc.nil? or tries >= 3
+    IO.popen(%{condor_q -constraint 'ClusterId == #{options[:id]}' \
+                        -format "%s" JobTrackerIPCAddress \
+                        -format "\n" TRUE }) do |sub|
+      tries+=1
+      sub.each do |line|
+        if not line.chomp.empty?
+          ipc = line.chomp
+        end
+      end
+      sleep 3
+    end
+  end
+
+  if ipc.nil?
+    puts "Could not find IPC address for #{options[:id]}, make sure it is running."
+    exit 1
+  end
+
+  puts "#{ipc}"
+  exit 0
+end
+
+
+def start(options)
+  namenode_id = options[:id]
+
+  ipc = http = nil
+  tries = 0
+  until not ipc.nil? or tries >= 3
+    # XXX: Race - IPC & HTTP are not set atomically
+    IO.popen(%{condor_q -constraint 'ClusterId == #{namenode_id}' \
+                        -format "%s" NameNodeIPCAddress \
+                        -format "," TRUE \
+                        -format "%s" NameNodeHTTPAddress \
+                        -format "\n" TRUE }) do |sub|
+      tries+=1
+      sub.each do |line|
+        line.chomp!
+        if line != ","
+          ipc, http = line.split(",")
+        end
+      end
+      sleep 3
+    end
+  end
+
+  if ipc.nil?
+    puts "Could not find IPC address for #{namenode_id}, make sure it is running."
+    exit
+  end
+
+  puts "Found JobTracker at #{ipc}"
+
+  # XXX: Not adding +NameNode=#{namenode_id} to avoid being cleaned up
+  #      when NameNode is, because of difficulty in also cleaning up
+  #      TaskTrackers
+  IO.popen(%{condor_submit -a '+NameNodeHTTPAddress="#{http}"' -a NameNodeAddress=#{ipc} mapred_jobtracker.job}) do |sub|
+    sub.each do |line|
+      puts line
+    end
+  end
+end
+
+
+def stop(options)
+  target = options[:id]
+  IO.popen(%{condor_rm -constraint 'JobTracker =?= #{target} || ClusterId == #{target}'}) do |sub|
+    sub.each do |line|
+      puts line
+    end
+  end
+end
+
+
+options = {}
+
+optparse = OptionParser.new do |opts|
+  opts.banner = "usage: #{$0} [options]"
+  opts.on("-l", "--list", Numeric, "List TaskTrackers") do |v|
+    options[:action] = :list
+    options[:id] = v.to_i if not v.nil?
+  end
+  opts.on("-i", "--ipc=ID", Numeric, "Get NameNodes IPC address") do |v|
+    options[:action] = :ipc
+    options[:id] = v.to_i
+  end
+  opts.on("-s", "--start=ID", "Start a new JobTracker, attached to given NameNode") do |v|
+    options[:action] = :start
+    options[:id] = v.to_i
+  end
+  opts.on("-e", "--stop=ID", Numeric, "Stop a JobTracker") do |v|
+    options[:action] = :stop
+    options[:id] = v.to_i
+  end
+  opts.on("-h", "--help", "Show this message") do
+    puts opts
+    exit
+  end
+end
+
+begin
+  optparse.parse!
+  if options[:action].nil?
+    puts optparse
+    exit
+  end
+rescue OptionParser::InvalidOption,
+       OptionParser::InvalidArgument,
+       OptionParser::MissingArgument
+  puts $!.to_s
+  puts optparse
+  exit
+end
+
+send options[:action], options
