@@ -1,0 +1,84 @@
+hadoop_namenode
+ --list
+ --ipc <id>
+ --start
+ --stop <id>
+
+hadoop_namenode --list
+ -> condor_q -constraint 'HadoopType =?= "NameNode"' -format ...
+
+hadoop_namenode --ipc <id>
+ -> condor_q -constraint 'ClusterId == <id>' -format ...
+
+hadoop_namenode --start
+ : condor_submit -a '+HadoopType="NameNode"' ...
+ -> id  ?wait for endpoint?
+
+hadoop_namenode --stop <id>
+ ! race exists with datanode --start
+ : condor_rm -constraint 'NameNode =?= <id> || ClusterId == <id>'
+ -> ???
+
+
+hadoop_datanode
+ --list [<namenode id>]
+ --start <namenode id>
+ --stop <id>
+
+hadoop_datanode --list
+ -> condor_q -constraint 'HadoopType =?= "DataNode"' -format ...
+
+hadoop_datanode --list <namenode id>
+ -> condor_q -constraint 'NameNode =?= <namenode id>' -format ...
+
+hadoop_datanode --start <namenode id>
+ : condor_q -format "%s" NameNodeAddress <namenode id>  !retry!
+ : condor_submit -a '+HadoopType="DataNode"' -a '+NameNode = <namenode id>' -a NameNodeAddress=^^ ...
+ -> id  ?wait for endpoint?
+
+hadoop_datanode --stop <id>
+ : condor_rm <id>
+ -> ???
+
+
+hadoop_jobtracker
+ --list
+ --ipc <id>
+ --start
+ --stop <id>
+
+hadoop_jobtracker --list
+ -> condor_q -constraint 'HadoopType =?= "JobTracker"' -format ...
+
+hadoop_jobtracker --ipc <id>
+ -> condor_q -constraint 'ClusterId == <id>' -format ...
+
+hadoop_jobtracker --start
+ : condor_submit -a '+HadoopType="JobTacker"' ...
+ -> id  ?wait for endpoint?
+
+hadoop_jobtracker --stop <id>
+ ! race exists with tasktracker --start
+ : condor_rm -constraint 'JobTracker =?= <id> || ClusterId == <id>'
+ -> ???
+
+
+hadoop_tasktracker
+ --list [<jobtracker id>]
+ --start <jobtracker id>
+ --stop <id>
+
+hadoop_tasktracker --list
+ -> condor_q -constraint 'HadoopType =?= "TaskTracker"' -format ...
+
+hadoop_tasktracker --list <jobtracker id>
+ -> condor_q -constraint 'JobTracker =?= <jobtracker id>' -format ...
+
+hadoop_tasktracker --start <jobtracker id>
+ : condor_q -format "%s" JobTrackerAddress <jobtracker id>  !retry!
+ : condor_submit -a '+HadoopType="TaskTracker"' -a '+JobTracker = <jobtracker id>' -a JobTrackerAddress=^^ ...
+ -> id  ?wait for endpoint?
+
+hadoop_tasktracker --stop <id>
+ : condor_rm <id>
+ -> ???
