@@ -37,12 +37,6 @@ cat > conf/mapred-site.xml <<EOF
     <name>mapred.job.tracker.http.address</name>
     <value>0.0.0.0:0</value>
   </property>
-</configuration>
-EOF
-cat > conf/hdfs-site.xml <<EOF
-<?xml version="1.0"?>
-<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
-<configuration>
   <property>
     <name>fs.default.name</name>
     <value>$NAMENODE_ENDPOINT</value>
