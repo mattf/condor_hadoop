@@ -1,0 +1,115 @@
+This project is a set of tools for building and managing Hadoop
+clusters on a set of shared Condor managed resources.
+
+Four processes are currently managed: NameNode, DataNode, JobTracker
+and TaskTracker. Instances of each are submitted to Condor for
+scheduling and execution.
+
+All development and testing as been with hadoop-1.0.1-bin.tar.gz
+
+Tools provided -
+
+ hadoop_namenode             : Manage NameNodes
+   --list        	     :  List all NameNodes
+   --ipc <id>    	     :  Retrieve IPC endpoint for NameNode <id>
+   --start       	     :  Start a new NameNode
+   --stop <id>   	     :  Stop the given NameNode
+
+ hadoop_datanode             : Manage DataNodes
+   --list [<namenode id>]    :  List DataNodes, optionally associated
+                             :   with a given NameNode
+   --start <namenode id>     :  Start a new DataNode, linked to given
+                             :   NameNode
+   --stop <id>               :  Stop the given DataNode
+
+ hadoop_jobtracker           : Manage JobTrackers
+   --list                    :  List all JobTrackers
+   --ipc <id>                :  Retrieve IPC endpoint for JobTracker <id>
+   --start <namenode id>     :  Start a new JobTracker, using given Namenode
+   --stop <id>               :  Stop the given JobTracker
+
+ hadoop_tasktracker          : Manage TaskTrackers
+   --list [<jobtracker id>]  :  List TaskTrackers, optionally
+                             :   associated with a given JobTracker
+   --start <jobtracker id>   :  Start a new TaskTracker, linked to
+                             :   given JobTracker
+   --stop <id>               :  Stop the given TaskTracker
+
+
+Example usage -
+
+Start a NameNode,
+
+$ ./hadoop_namenode -s
+Submitting job(s).
+1 job(s) submitted to cluster 256.
+
+$ ./hadoop_namenode -l
+  ID    Submitted   Status       Uptime      Owner  Location
+ 256  03/01 13:41  Running           11       matt  http://eeyore.local:57743
+
+Start a DataNode, attached to just started NameNode,
+
+$ ./hadoop_datanode -s 256
+Found NameNode at hdfs://eeyore.local:51447
+Submitting job(s).
+1 job(s) submitted to cluster 257.
+
+$ ./hadoop_datanode -l
+  ID    Submitted   Status       Uptime      Owner  NameNode
+ 257  03/01 13:42  Running   0+00:00:11       matt  256 @ http://eeyore.local:57743
+
+Start a JobTracker, attached to the NameNode,
+
+$ ./hadoop_jobtracker -s 256
+Found NameNode at hdfs://eeyore.local:51447
+Submitting job(s).
+1 job(s) submitted to cluster 259.
+
+$ ./hadoop_jobtracker -l
+  ID    Submitted   Status       Uptime      Owner  Location
+ 259  03/01 13:46  Running            9       matt http://eeyore.local:33649
+
+Start a TaskTracker, attached to the new JobTracker,
+
+$ ./hadoop_tasktracker -s 259
+Found JobTracker at maprfs://eeyore.local:52438
+Submitting job(s).
+1 job(s) submitted to cluster 260.
+
+$ ./hadoop_namenode -l
+  ID    Submitted   Status       Uptime      Owner  Location
+ 256  03/01 13:41  Running         6:29       matt  http://eeyore.local:57743
+$ ./hadoop_datanode -l
+  ID    Submitted   Status       Uptime      Owner  NameNode
+ 257  03/01 13:42  Running   0+00:06:09       matt  256 @ http://eeyore.local:57743
+$ ./hadoop_jobtracker -l
+  ID    Submitted   Status       Uptime      Owner  Location
+ 259  03/01 13:46  Running         1:43       matt  http://eeyore.local:33649
+$ ./hadoop_tasktracker -l
+  ID    Submitted   Status       Uptime      Owner  JobTracker
+ 260  03/01 13:47  Running         1:13       matt  259 @ http://eeyore.local:33649 
+
+$ ./hadoop_namenode -i 256 
+hdfs://eeyore.local:51447
+$ ./hadoop_jobtracker -i 259 
+maprfs://eeyore.local:52438
+
+$ cat > conf/mapred-site.xml << EOF
+<configuration>
+     <property>
+         <name>mapred.job.tracker</name>
+         <value>maprfs://eeyore.local:52438</value>
+     </property>
+     <property>
+         <name>fs.default.name</name>
+         <value>hdfs://eeyore.local:51447</value>
+     </property>
+</configuration>
+EOF
+
+$ time ./bin/hadoop jar hadoop-test-1.0.1.jar mrbench
+...
+DataLines	Maps	Reduces	AvgTime (milliseconds)
+1		2	1	33523
+
