@@ -84,7 +84,7 @@ def start(options)
     exit
   end
 
-  puts "Found JobTracker at #{ipc}"
+  puts "Found NameNode at #{ipc}"
 
   # XXX: Not adding +NameNode=#{namenode_id} to avoid being cleaned up
   #      when NameNode is, because of difficulty in also cleaning up
