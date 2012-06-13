@@ -69,8 +69,8 @@ while [ ! $(grep "JobTracker webserver" $LOG_FILE) ]; do sleep 1; done
 HTTP_PORT=$(grep "JobTracker webserver" $LOG_FILE | sed 's/.* webserver: \(.*\)$/\1/')
 
 # Record the port number where everyone can see it
-condor_chirp set_job_attr JobTrackerIPCAddress \"maprfs://$HOSTNAME:$IPC_PORT\"
-condor_chirp set_job_attr JobTrackerHTTPAddress \"http://$HOSTNAME:$HTTP_PORT\"
+condor_chirp set_job_attr JobTrackerIPCAddress \"maprfs://$(hostname -f):$IPC_PORT\"
+condor_chirp set_job_attr JobTrackerHTTPAddress \"http://$(hostname -f):$HTTP_PORT\"
 
 # While namenode is running, collect and report back stats
 while kill -0 $PID; do

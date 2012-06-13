@@ -72,8 +72,8 @@ while [ ! $(grep "Jetty bound to port" $LOG_FILE) ]; do sleep 1; done
 HTTP_PORT=$(grep "Jetty bound to port" $LOG_FILE | sed 's/.* to port \(.*\)$/\1/')
 
 # Record the port number where everyone can see it
-condor_chirp set_job_attr NameNodeIPCAddress \"hdfs://$HOSTNAME:$IPC_PORT\"
-condor_chirp set_job_attr NameNodeHTTPAddress \"http://$HOSTNAME:$HTTP_PORT\"
+condor_chirp set_job_attr NameNodeIPCAddress \"hdfs://$(hostname -f):$IPC_PORT\"
+condor_chirp set_job_attr NameNodeHTTPAddress \"http://$(hostname -f):$HTTP_PORT\"
 
 # While namenode is running, collect and report back stats
 while kill -0 $PID; do
