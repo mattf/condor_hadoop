@@ -68,9 +68,17 @@ IPC_PORT=$(grep "JobTracker up at" $LOG_FILE | sed 's/.* up at: \(.*\)$/\1/')
 while [ ! $(grep "JobTracker webserver" $LOG_FILE) ]; do sleep 1; done
 HTTP_PORT=$(grep "JobTracker webserver" $LOG_FILE | sed 's/.* webserver: \(.*\)$/\1/')
 
+my_hostname=$(hostname -f)
+
+curl --connect-timeout 3 --silent http://169.254.169.254/2012-01-12
+if [ $? -eq 0 ]; then
+  my_hostname=$(curl http://169.254.169.254/2012-01-12/meta-data/public-hostname)
+  echo "Found EC2 public hostname: $my_hostname"
+fi
+
 # Record the port number where everyone can see it
-condor_chirp set_job_attr JobTrackerIPCAddress \"maprfs://$(hostname -f):$IPC_PORT\"
-condor_chirp set_job_attr JobTrackerHTTPAddress \"http://$(hostname -f):$HTTP_PORT\"
+condor_chirp set_job_attr JobTrackerIPCAddress \"maprfs://$my_hostname:$IPC_PORT\"
+condor_chirp set_job_attr JobTrackerHTTPAddress \"http://$my_hostname:$HTTP_PORT\"
 
 # While namenode is running, collect and report back stats
 while kill -0 $PID; do
