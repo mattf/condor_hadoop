@@ -19,7 +19,7 @@ Tools provided -
    --list [<namenode id>]    :  List DataNodes, optionally associated
                              :   with a given NameNode
    --start <namenode id>     :  Start a new DataNode, linked to given
-                             :   NameNode
+    [--count <#>]            :   NameNode, potentially numerous
    --stop <id>               :  Stop the given DataNode
 
  hadoop_jobtracker           : Manage JobTrackers
@@ -32,7 +32,7 @@ Tools provided -
    --list [<jobtracker id>]  :  List TaskTrackers, optionally
                              :   associated with a given JobTracker
    --start <jobtracker id>   :  Start a new TaskTracker, linked to
-                             :   given JobTracker
+    [--count <#>]            :   given JobTracker, potentially numerous
    --stop <id>               :  Stop the given TaskTracker
 
 

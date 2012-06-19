@@ -61,9 +61,11 @@ def start(options)
 
   puts "Found JobTracker at #{ipc}"
 
-  IO.popen(%{condor_submit -a "+JobTracker=#{jobtracker_id}" -a '+JobTrackerHTTPAddress="#{http}"' -a JobTrackerAddress=#{ipc} mapred_tasktracker.job}) do |sub|
-    sub.each do |line|
-      puts line
+  (1..options.fetch(:count, 1)).each do 
+    IO.popen(%{condor_submit -a "+JobTracker=#{jobtracker_id}" -a '+JobTrackerHTTPAddress="#{http}"' -a JobTrackerAddress=#{ipc} mapred_tasktracker.job}) do |sub|
+      sub.each do |line|
+        puts line
+      end
     end
   end
 end
@@ -90,6 +92,9 @@ optparse = OptionParser.new do |opts|
     options[:action] = :start
     options[:id] = v.to_i
   end
+  opts.on("-c", "--count=COUNT", "Start multiple new DataNodes") do |v|
+    options[:count] = v.to_i
+  end
   opts.on("-e", "--stop=ID", Numeric, "Stop a TaskTracker") do |v|
     options[:action] = :stop
     options[:id] = v.to_i
@@ -114,4 +119,5 @@ rescue OptionParser::InvalidOption,
   exit
 end
 
+# XXX: Arg validation (including warn if ignoring --count)
 send options[:action], options

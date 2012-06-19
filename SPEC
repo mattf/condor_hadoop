@@ -22,7 +22,7 @@ hadoop_namenode --stop <id>
 
 hadoop_datanode
  --list [<namenode id>]
- --start <namenode id>
+ --start <namenode id> [--count <#>]
  --stop <id>
 
 hadoop_datanode --list
@@ -31,9 +31,9 @@ hadoop_datanode --list
 hadoop_datanode --list <namenode id>
  -> condor_q -constraint 'NameNode =?= <namenode id>' -format ...
 
-hadoop_datanode --start <namenode id>
+hadoop_datanode --start <namenode id> [--count <#>]
  : condor_q -format "%s" NameNodeAddress <namenode id>  !retry!
- : condor_submit -a '+HadoopType="DataNode"' -a '+NameNode = <namenode id>' -a NameNodeAddress=^^ ...
+ : repeat # times: condor_submit -a '+HadoopType="DataNode"' -a '+NameNode = <namenode id>' -a NameNodeAddress=^^ ...
  -> id  ?wait for endpoint?
 
 hadoop_datanode --stop <id>
@@ -53,9 +53,9 @@ hadoop_jobtracker --list
 hadoop_jobtracker --ipc <id>
  -> condor_q -constraint 'ClusterId == <id>' -format ...
 
-hadoop_jobtracker --start <namenode id>
+hadoop_jobtracker --start <namenode id> [--count <#>]
  : condor_q -format "%s" NameNodeAddress <namenode id>  !retry!
- : condor_submit -a '+HadoopType="JobTracker"' -a '+NameNode = <namenode id>' -a NameNodeAddress=^^ ...
+ : repeat # times: condor_submit -a '+HadoopType="JobTracker"' -a '+NameNode = <namenode id>' -a NameNodeAddress=^^ ...
  -> id  ?wait for endpoint?
 
 hadoop_jobtracker --stop <id>
