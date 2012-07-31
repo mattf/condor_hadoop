@@ -115,7 +115,7 @@ optparse = OptionParser.new do |opts|
     options[:action] = :list
     options[:id] = v.to_i if not v.nil?
   end
-  opts.on("-i", "--ipc=ID", Numeric, "Get NameNodes IPC address") do |v|
+  opts.on("-i", "--ipc=ID", Numeric, "Get JobTracker IPC address") do |v|
     options[:action] = :ipc
     options[:id] = v.to_i
   end
