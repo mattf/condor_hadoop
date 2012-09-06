@@ -38,6 +38,11 @@ Tools provided -
 
 Example usage -
 
+Setup,
+
+$ wget http://archive.apache.org/dist/hadoop/core/hadoop-1.0.1/hadoop-1.0.1-bin.tar.gz
+...
+
 Start a NameNode,
 
 $ ./hadoop_namenode -s
@@ -90,11 +95,15 @@ $ ./hadoop_tasktracker -l
   ID    Submitted   Status       Uptime      Owner  JobTracker
  260  03/01 13:47  Running         1:13       matt  259 @ http://eeyore.local:33649 
 
+Use the Hadoop command line tools to run a job,
+
 $ ./hadoop_namenode -i 256 
 hdfs://eeyore.local:51447
 $ ./hadoop_jobtracker -i 259 
 maprfs://eeyore.local:52438
 
+$ tar zxf hadoop-1.0.1-bin.tar.gz
+$ cd hadoop-1.0.1
 $ cat > conf/mapred-site.xml << EOF
 <configuration>
      <property>
@@ -108,6 +117,7 @@ $ cat > conf/mapred-site.xml << EOF
 </configuration>
 EOF
 
+$ export JAVA_HOME=/usr
 $ time ./bin/hadoop jar hadoop-test-1.0.1.jar mrbench
 ...
 DataLines	Maps	Reduces	AvgTime (milliseconds)
