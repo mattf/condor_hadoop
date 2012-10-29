@@ -3,7 +3,9 @@
 # condor_chirp in /usr/libexec/condor
 export PATH=$PATH:/usr/libexec/condor
 
-HADOOP_TARBALL=$1
+HADOOP_FULL_TARBALL=$1
+HADOOP_TARBALL=${HADOOP_FULL_TARBALL##*/}
+
 NAMENODE_ENDPOINT=$2
 
 # Note: bin/hadoop uses JAVA_HOME to find the runtime and tools.jar,
@@ -20,8 +22,19 @@ function term {
 #   cp logs.tgz $_CONDOR_SCRATCH_DIR
 }
 
+# In cases where folks want to test before running through condor
+if [ -z "$_CONDOR_SCRATCH_DIR" ]; then
+    echo "Environment variable _CONDOR_SCRATCH_DIR is empty and required to run script"
+    exit 1
+fi
+
 # Unpack
 tar xzfv $HADOOP_TARBALL
+if [ $? -ne 0 ]; then
+    echo "Failed to extract $HADOOP_TARBALL"
+    exit 1
+fi 
+
 
 # Move into tarball, inefficiently
 cd $(tar tzf $HADOOP_TARBALL | head -n1)
@@ -62,7 +75,12 @@ trap term SIGTERM
 export HADOOP_CONF_DIR=$PWD/conf
 export HADOOP_PID_DIR=$PWD
 export HADOOP_LOG_DIR=$_CONDOR_SCRATCH_DIR/logs
+
 ./bin/hadoop-daemon.sh start datanode
+if [ $? -ne 0 ]; then
+    echo "Failed to start datanode"
+    exit 1
+fi 
 
 # Wait for pid file
 PID_FILE=$(echo hadoop-*-datanode.pid)
@@ -77,5 +95,7 @@ PID=$(cat $PID_FILE)
 while kill -0 $PID; do
    # Collect stats and chirp them back into the job ad
    # None at the moment.
+   
+   # Why not chirp back the logs?  It seems like a good place to collect.  
    sleep 30
 done

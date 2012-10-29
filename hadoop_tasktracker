@@ -88,21 +88,31 @@ optparse = OptionParser.new do |opts|
     options[:action] = :list
     options[:id] = v.to_i if not v.nil?
   end
+  
+  options[:file] = false 
+  opts.on("-f", "--file=hadoop-bin.tar.gz", "Specify a specific hadoop tarball") do |f|
+    options[:file] = f 
+  end
+  
   opts.on("-s", "--start=ID", "Start a new TaskTracker, attached to given JobTracker") do |v|
     options[:action] = :start
     options[:id] = v.to_i
   end
+  
   opts.on("-c", "--count=COUNT", "Start multiple new DataNodes") do |v|
     options[:count] = v.to_i
   end
+  
   opts.on("-e", "--stop=ID", Numeric, "Stop a TaskTracker") do |v|
     options[:action] = :stop
     options[:id] = v.to_i
   end
+  
   opts.on("-h", "--help", "Show this message") do
     puts opts
     exit
   end
+  
 end
 
 begin

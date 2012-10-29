@@ -4,19 +4,28 @@
 +HadoopType = "DataNode"
 
 cmd = hdfs_datanode.sh
-args = hadoop-1.0.1-bin.tar.gz $(NameNodeAddress)
+args = $(HadoopBinTarBall) $(NameNodeAddress)
 
-transfer_input_files = hadoop-1.0.1-bin.tar.gz
+transfer_input_files = $(HadoopBinTarBall)
 
 # RFE: Ability to get output files even when job is removed
 #transfer_output_files = logs.tgz
 #transfer_output_remaps = "logs.tgz logs.$(cluster).tgz"
-output = datanode.$(cluster).out
-error = datanode.$(cluster).err
 
-log = datanode.$(cluster).log
+output = datanode.$(cluster).out.txt
+error = datanode.$(cluster).err.txt
+log = datanode.$(cluster).log.txt
 
 kill_sig = SIGTERM
+
+# prefer machines with more disk space (Network is important too!)
+# So in reality it would be the sum of it's parts 
+# .4*disk + .5*bandwith + .1*locality 
+rank = disk
+
+# So practical question we don't want other jobs to land here which may 
+# use a lot of disk space so.. um.. what to do, what to do. 
+# request_disk = ... 
 
 # Want chirp functionality
 +WantIOProxy = TRUE
@@ -25,5 +34,8 @@ should_transfer_files = yes
 when_to_transfer_output = on_exit
 
 requirements = HasJava =?= TRUE
+
+# useful for testing on personal condor setups
+getenv= $ENV(DEBUG) =?= TRUE
 
 queue

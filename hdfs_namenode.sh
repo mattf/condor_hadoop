@@ -3,7 +3,8 @@
 # condor_chirp in /usr/libexec/condor
 export PATH=$PATH:/usr/libexec/condor
 
-HADOOP_TARBALL=$1
+HADOOP_FULL_TARBALL=$1
+HADOOP_TARBALL=${HADOOP_FULL_TARBALL##*/}
 
 # Note: bin/hadoop uses JAVA_HOME to find the runtime and tools.jar,
 #       except tools.jar does not seem necessary therefore /usr works
@@ -16,8 +17,17 @@ function term {
    ./bin/hadoop-daemon.sh stop namenode
 }
 
+if [ -z "$_CONDOR_SCRATCH_DIR" ]; then
+    echo "Environment variable _CONDOR_SCRATCH_DIR is empty and required to run script"
+    exit 1
+fi
+
 # Unpack
 tar xzfv $HADOOP_TARBALL
+if [ $? -ne 0 ]; then
+    echo "Failed to extract $HADOOP_TARBALL"
+    exit 1
+fi 
 
 # Move into tarball, inefficiently
 cd $(tar tzf $HADOOP_TARBALL | head -n1)
@@ -53,8 +63,22 @@ export HADOOP_CONF_DIR=$PWD/conf
 export HADOOP_LOG_DIR=$_CONDOR_SCRATCH_DIR/logs
 export HADOOP_PID_DIR=$PWD
 
+###############################################
+# Format the name node
 ./bin/hadoop namenode -format
+if [ $? -ne 0 ]; then
+    echo "Failed to format name node"
+    exit 1
+fi 
+
+###############################################
+# 
 ./bin/hadoop-daemon.sh start namenode
+if [ $? -ne 0 ]; then
+    echo "Failed to start the daemon"
+    exit 1
+fi 
+
 
 # Wait for pid file
 PID_FILE=$(echo hadoop-*-namenode.pid)
@@ -81,7 +105,18 @@ fi
 
 # Record the port number where everyone can see it
 condor_chirp set_job_attr NameNodeIPCAddress \"hdfs://$my_hostname:$IPC_PORT\"
+if [ $? -ne 0 ]; then
+    echo "Failed to chirp update, exiting"
+    term
+    exit 1
+fi 
+
 condor_chirp set_job_attr NameNodeHTTPAddress \"http://$my_hostname:$HTTP_PORT\"
+if [ $? -ne 0 ]; then
+    echo "Failed to chirp update, exiting"
+    term
+    exit 1
+fi 
 
 # While namenode is running, collect and report back stats
 while kill -0 $PID; do
