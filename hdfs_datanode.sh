@@ -5,7 +5,6 @@ export PATH=$PATH:/usr/libexec/condor
 
 HADOOP_FULL_TARBALL=$1
 HADOOP_TARBALL=${HADOOP_FULL_TARBALL##*/}
-
 NAMENODE_ENDPOINT=$2
 
 # Note: bin/hadoop uses JAVA_HOME to find the runtime and tools.jar,

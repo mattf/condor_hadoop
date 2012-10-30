@@ -19,13 +19,15 @@ log = datanode.$(cluster).log.txt
 kill_sig = SIGTERM
 
 # prefer machines with more disk space (Network is important too!)
-# So in reality it would be the sum of it's parts 
+# So in reality it would be the sum of it's parts, but we would need 
+# custom startd attributes to enable.
 # .4*disk + .5*bandwith + .1*locality 
 rank = disk
 
-# So practical question we don't want other jobs to land here which may 
-# use a lot of disk space so.. um.. what to do, what to do. 
-# request_disk = ... 
+# This is a temporary method which says we want the data nodes to have at least 
+# 65% of the nodes disk space.  This will prevent other data nodes from landing on the 
+# same machine while still allowing other non data intensive jobs to land  
+request_disk = floor(.65 * Target.TotalDisk)
 
 # Want chirp functionality
 +WantIOProxy = TRUE
@@ -33,7 +35,7 @@ rank = disk
 should_transfer_files = yes
 when_to_transfer_output = on_exit
 
-requirements = HasJava =?= TRUE
+requirements = HasJava =?= TRUE 
 
 # useful for testing on personal condor setups
 getenv= $ENV(DEBUG) =?= TRUE

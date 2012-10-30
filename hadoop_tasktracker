@@ -33,36 +33,44 @@ end
 
 def start(options)
   jobtracker_id = options[:id]
+  hadoop_file = ( options[:file] == nil ? ENV['HADOOP_BIN_TARBALL']: options[:file] )
 
   ipc = http = nil
-  tries = 0
-  until not ipc.nil? or tries >= 3
-    # XXX: Race - IPC & HTTP are not set atomically
-    IO.popen(%{condor_q -constraint 'ClusterId == #{jobtracker_id}' \
-                        -format "%s" JobTrackerIPCAddress \
-                        -format "," TRUE \
-                        -format "%s" JobTrackerHTTPAddress \
-                        -format "\n" TRUE }) do |sub|
-      tries+=1
-      sub.each do |line|
-        line.chomp!
-        if line != ","
-          ipc, http = line.split(",")
+  
+  if jobtracker_id != 0 
+
+    tries = 0
+    until not ipc.nil? or tries >= 3
+        # XXX: Race - IPC & HTTP are not set atomically
+        IO.popen(%{condor_q -constraint 'ClusterId == #{jobtracker_id}' \
+                            -format "%s" JobTrackerIPCAddress \
+                            -format "," TRUE \
+                            -format "%s" JobTrackerHTTPAddress \
+                            -format "\n" TRUE }) do |sub|
+        tries+=1
+        sub.each do |line|
+            line.chomp!
+            if line != ","
+            ipc, http = line.split(",")
+            end
         end
-      end
-      sleep 3
+        sleep 3
+        end
+
     end
+  else
+    ipc = http = options[:idraw]
   end
-
+ 
   if ipc.nil?
-    puts "Could not find IPC address for #{jobtracker_id}, make sure it is running."
-    exit
+        puts "Could not find IPC address for #{jobtracker_id}, make sure it is running."
+        exit
   end
-
+  
   puts "Found JobTracker at #{ipc}"
 
   (1..options.fetch(:count, 1)).each do 
-    IO.popen(%{condor_submit -a "+JobTracker=#{jobtracker_id}" -a '+JobTrackerHTTPAddress="#{http}"' -a JobTrackerAddress=#{ipc} mapred_tasktracker.job}) do |sub|
+    IO.popen(%{condor_submit -a HadoopBinTarBall='#{hadoop_file}' -a "+JobTracker=#{jobtracker_id}" -a '+JobTrackerHTTPAddress="#{http}"' -a JobTrackerAddress=#{ipc} mapred_tasktracker.job}) do |sub|
       sub.each do |line|
         puts line
       end
@@ -88,15 +96,15 @@ optparse = OptionParser.new do |opts|
     options[:action] = :list
     options[:id] = v.to_i if not v.nil?
   end
-  
-  options[:file] = false 
+   
   opts.on("-f", "--file=hadoop-bin.tar.gz", "Specify a specific hadoop tarball") do |f|
     options[:file] = f 
   end
   
-  opts.on("-s", "--start=ID", "Start a new TaskTracker, attached to given JobTracker") do |v|
+  opts.on("-s", "--start=MRfsUrl_OR_ClusterId", "Starts TaskTracker, attached to given JobTracker") do |v|
     options[:action] = :start
     options[:id] = v.to_i
+    options[:idraw] = v
   end
   
   opts.on("-c", "--count=COUNT", "Start multiple new DataNodes") do |v|

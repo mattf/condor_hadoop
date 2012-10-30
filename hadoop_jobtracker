@@ -58,25 +58,38 @@ end
 
 def start(options)
   namenode_id = options[:id]
-
+  hadoop_file = ( options[:file] == nil ? ENV['HADOOP_BIN_TARBALL']: options[:file] )
+  
+  # check the hadoop file
+  if hadoop_file.nil?
+    puts "hadoop-X.Y.X-bin.tar.gz required! Please specify via --file= ,or set the HADOOP_BIN_TARBALL environment variable"
+    exit 1
+  end
+  
   ipc = http = nil
-  tries = 0
-  until not ipc.nil? or tries >= 3
-    # XXX: Race - IPC & HTTP are not set atomically
-    IO.popen(%{condor_q -constraint 'ClusterId == #{namenode_id}' \
-                        -format "%s" NameNodeIPCAddress \
-                        -format "," TRUE \
-                        -format "%s" NameNodeHTTPAddress \
-                        -format "\n" TRUE }) do |sub|
-      tries+=1
-      sub.each do |line|
-        line.chomp!
-        if line != ","
-          ipc, http = line.split(",")
+  
+  if namenode_id != 0 
+        
+    tries = 0
+    until not ipc.nil? or tries >= 3
+        # XXX: Race - IPC & HTTP are not set atomically
+        IO.popen(%{condor_q -constraint 'ClusterId == #{namenode_id}' \
+                            -format "%s" NameNodeIPCAddress \
+                            -format "," TRUE \
+                            -format "%s" NameNodeHTTPAddress \
+                            -format "\n" TRUE }) do |sub|
+        tries+=1
+        sub.each do |line|
+            line.chomp!
+            if line != ","
+            ipc, http = line.split(",")
+            end
         end
-      end
-      sleep 3
+        sleep 3
+        end
     end
+  else
+    ipc = http = options[:idraw]
   end
 
   if ipc.nil?
@@ -89,7 +102,7 @@ def start(options)
   # XXX: Not adding +NameNode=#{namenode_id} to avoid being cleaned up
   #      when NameNode is, because of difficulty in also cleaning up
   #      TaskTrackers
-  IO.popen(%{condor_submit -a '+NameNodeHTTPAddress="#{http}"' -a NameNodeAddress=#{ipc} mapred_jobtracker.job}) do |sub|
+  IO.popen(%{condor_submit -a HadoopBinTarBall='#{hadoop_file}' -a '+NameNodeURL="#{http}"' -a NameNodeAddress=#{ipc} mapred_jobtracker.job}) do |sub|
     sub.each do |line|
       puts line
     end
@@ -122,14 +135,14 @@ optparse = OptionParser.new do |opts|
     options[:id] = v.to_i
   end
   
-  options[:file] = false 
   opts.on("-f", "--file=hadoop-bin.tar.gz", "Specify a specific hadoop tarball") do |f|
     options[:file] = f 
   end
   
-  opts.on("-s", "--start=ID", "Start a new JobTracker, attached to given NameNode") do |v|
+  opts.on("-s", "--start=HDFSUrl_OR_ClusterId", "Start a new JobTracker, attached to given NameNode") do |v|
     options[:action] = :start
     options[:id] = v.to_i
+    options[:idraw] = v
   end
   
   opts.on("-e", "--stop=ID", Numeric, "Stop a JobTracker") do |v|
