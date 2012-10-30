@@ -38,6 +38,6 @@ when_to_transfer_output = on_exit
 requirements = HasJava =?= TRUE 
 
 # useful for testing on personal condor setups
-getenv= $ENV(DEBUG) =?= TRUE
+# getenv= $ENV(DEBUG) =?= TRUE
 
 queue
