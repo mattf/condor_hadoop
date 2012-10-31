@@ -1,8 +1,8 @@
 #!/usr/bin/ruby
 
 require 'optparse'
-require 'numeric_duration'
-require 'numeric_state_name'
+require_relative 'numeric_duration'
+require_relative 'numeric_state_name'
 
 
 def list(options)
@@ -14,7 +14,7 @@ def list(options)
                       -format "%d," EnteredCurrentStatus \
                       -format "%s," Owner \
                       -format "%d," NameNode \
-                      -format "%s" NameNodeHTTPAddress \
+                      -format "%s" NameNodeURL \
                       -format "\n" TRUE}) do |sub|
     printf "  ID    Submitted   Status       Uptime      Owner  NameNode\n"
     sub.each do |line|
@@ -32,34 +32,50 @@ end
 
 def start(options)
   namenode_id = options[:id]
-
+  hadoop_file = ( options[:file] == nil ? ENV['HADOOP_BIN_TARBALL']: options[:file] )
+  
+  # check the hadoop file
+  if hadoop_file.nil?
+    puts "hadoop-X.Y.X-bin.tar.gz required! Please specify via --file= ,or set the HADOOP_BIN_TARBALL environment variable"
+    exit 1
+  end
+  
   ipc = http = nil
-  tries = 0
-  until not ipc.nil? or tries >= 3
-    # XXX: Race - IPC & HTTP are not set atomically
-    IO.popen(%{condor_q -constraint 'ClusterId == #{namenode_id}' \
-                        -format "%s," NameNodeIPCAddress \
-                        -format "%s" NameNodeHTTPAddress \
-                        -format "\n" TRUE }) do |sub|
-      tries+=1
-      sub.each do |line|
-        if line.chomp != ","
-          ipc, http = line.chomp.split(",")
-        end
-      end
-      sleep 3
+  
+  if namenode_id != 0 
+    
+    tries = 0
+    until not ipc.nil? or tries >= 3
+	# XXX: Race - IPC & HTTP are not set atomically
+	IO.popen(%{condor_q -constraint 'ClusterId == #{namenode_id}' \
+			    -format "%s," NameNodeIPCAddress \
+			    -format "%s" NameNodeHTTPAddress \
+			    -format "\n" TRUE }) do |sub|
+	tries+=1
+	sub.each do |line|
+	    if line.chomp != ","
+	    ipc, http = line.chomp.split(",")
+	    end
+	end
+	sleep 3
+	end
     end
+
+    if ipc.nil?
+	puts "Could not find IPC address for #{namenode_id}, make sure it is running."
+	exit
+    end
+  else
+    ipc = http = options[:idraw]   
   end
 
-  if ipc.nil?
-    puts "Could not find IPC address for #{namenode_id}, make sure it is running."
-    exit
-  end
-
-  puts "Found NameNode at #{ipc}"
-
+  puts "Submitting DataNode against NameNode_URL= #{ipc}"
+  
+  # useful for debugging 
+  # puts "condor_submit -debug -a HadoopBinTarBall='#{hadoop_file}' -a \"+NameNode=#{namenode_id}\" -a '+NameNodeURL=\"#{http}\"' -a NameNodeAddress=#{ipc} hdfs_datanode.job"
+  
   (1..options.fetch(:count, 1)).each do 
-    IO.popen(%{condor_submit -a "+NameNode=#{namenode_id}" -a '+NameNodeHTTPAddress="#{http}"' -a NameNodeAddress=#{ipc} hdfs_datanode.job}) do |sub|
+    IO.popen(%{condor_submit -a HadoopBinTarBall='#{hadoop_file}' -a "+NameNode=#{namenode_id}" -a '+NameNodeURL="#{http}"' -a NameNodeAddress=#{ipc} hdfs_datanode.job}) do |sub|
       sub.each do |line|
         puts line
       end
@@ -81,21 +97,31 @@ options = {}
 
 optparse = OptionParser.new do |opts|
   opts.banner = "usage: #{$0} [options]"
+  
   opts.on("-l", "--list[=NameNode ID]", Numeric, "List DataNodes, optionally of a NameNode") do |v|
     options[:action] = :list
     options[:id] = v.to_i if not v.nil?
   end
-  opts.on("-s", "--start=ID", "Start a new DataNode, attached to given NameNode") do |v|
-    options[:action] = :start
-    options[:id] = v.to_i
+   
+  opts.on("-f", "--file=hadoop-bin.tar.gz", "Specify tarball or set HADOOP_BIN_TARBALL in your env") do |f|
+    options[:file] = f 
   end
+  
+  opts.on("-s", "--start=HDFSUrl_OR_ClusterId", "Start a new DataNode, attached to NameNode") do |v|
+    options[:action] = :start
+    options[:id] = v.to_i 
+    options[:idraw] = v
+  end
+  
   opts.on("-c", "--count=COUNT", "Start multiple new DataNodes") do |v|
     options[:count] = v.to_i
   end
+  
   opts.on("-e", "--stop=ID", Numeric, "Stop a NameNode") do |v|
     options[:action] = :stop
     options[:id] = v.to_i
   end
+  
   opts.on("-h", "--help", "Show this message") do
     puts opts
     exit
