@@ -16,6 +16,10 @@ output = tasktracker.$(cluster).out.txt
 error = tasktracker.$(cluster).err.txt
 log = tasktracker.$(cluster).log.txt
 
+# prefer speedy machines, but I'm guessing network is more 
+# important.
+rank = Mips
+
 kill_sig = SIGTERM
 
 # Want chirp functionality

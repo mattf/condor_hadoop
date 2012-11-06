@@ -11,6 +11,10 @@ log = namenode.$(cluster).log.txt
 
 kill_sig = SIGTERM
 
+# Choose a machine with lots of memory and take it over.
+rank = memory
+request_memory = Target.Memory
+
 # Want chirp functionality
 +WantIOProxy = TRUE
 

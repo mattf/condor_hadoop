@@ -18,6 +18,10 @@ log = jobtracker.$(cluster).log.txt
 
 kill_sig = SIGTERM
 
+# prefer machines with more memory
+# there may be other preferences based on locality.
+rank = memory
+
 # Want chirp functionality
 +WantIOProxy = TRUE
 
