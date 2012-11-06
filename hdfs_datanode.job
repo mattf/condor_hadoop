@@ -18,6 +18,17 @@ log = datanode.$(cluster).log.txt
 
 kill_sig = SIGTERM
 
+# prefer machines with more disk space (Network is important too!)
+# So in reality it would be the sum of it's parts, but we would need 
+# custom startd attributes to enable.
+# .4*disk + .5*bandwith + .1*locality 
+rank = disk
+
+# This is a temporary method which says we want the data nodes to have at least 
+# 65% of the nodes disk space.  This will prevent other data nodes from landing on the 
+# same machine while still allowing other non data intensive jobs to land  
+request_disk = floor(.65 * Target.TotalDisk)
+
 # Want chirp functionality
 +WantIOProxy = TRUE
 
