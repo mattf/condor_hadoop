@@ -60,23 +60,28 @@ def start(options)
   namenode_id = options[:id]
 
   ipc = http = nil
-  tries = 0
-  until not ipc.nil? or tries >= 3
-    # XXX: Race - IPC & HTTP are not set atomically
-    IO.popen(%{condor_q -constraint 'ClusterId == #{namenode_id}' \
-                        -format "%s" NameNodeIPCAddress \
-                        -format "," TRUE \
-                        -format "%s" NameNodeHTTPAddress \
-                        -format "\n" TRUE }) do |sub|
+
+  if namenode_id != 0
+    tries = 0
+    until not ipc.nil? or tries >= 3
+      # XXX: Race - IPC & HTTP are not set atomically
+      IO.popen(%{condor_q -constraint 'ClusterId == #{namenode_id}' \
+                          -format "%s" NameNodeIPCAddress \
+                          -format "," TRUE \
+                          -format "%s" NameNodeHTTPAddress \
+                          -format "\n" TRUE }) do |sub|
       tries+=1
       sub.each do |line|
         line.chomp!
         if line != ","
           ipc, http = line.split(",")
+          end
         end
+        sleep 3
       end
-      sleep 3
     end
+  else
+    ipc = http = options[:idraw]
   end
 
   if ipc.nil?
@@ -119,9 +124,10 @@ optparse = OptionParser.new do |opts|
     options[:action] = :ipc
     options[:id] = v.to_i
   end
-  opts.on("-s", "--start=ID", "Start a new JobTracker, attached to given NameNode") do |v|
+  opts.on("-s", "--start=ID", "Start a new JobTracker, attached to given NameNode (url/ClusterId)") do |v|
     options[:action] = :start
     options[:id] = v.to_i
+    options[:idraw] = v
   end
   opts.on("-e", "--stop=ID", Numeric, "Stop a JobTracker") do |v|
     options[:action] = :stop

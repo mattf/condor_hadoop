@@ -1,8 +1,8 @@
 #!/usr/bin/ruby
 
 require 'optparse'
-require 'numeric_duration'
-require 'numeric_state_name'
+require_relative 'numeric_duration'
+require_relative 'numeric_state_name'
 
 
 def list(options)
@@ -14,7 +14,7 @@ def list(options)
                       -format "%d," EnteredCurrentStatus \
                       -format "%s," Owner \
                       -format "%d," NameNode \
-                      -format "%s" NameNodeHTTPAddress \
+                      -format "%s" NameNodeURL \
                       -format "\n" TRUE}) do |sub|
     printf "  ID    Submitted   Status       Uptime      Owner  NameNode\n"
     sub.each do |line|
@@ -34,21 +34,26 @@ def start(options)
   namenode_id = options[:id]
 
   ipc = http = nil
-  tries = 0
-  until not ipc.nil? or tries >= 3
-    # XXX: Race - IPC & HTTP are not set atomically
-    IO.popen(%{condor_q -constraint 'ClusterId == #{namenode_id}' \
-                        -format "%s," NameNodeIPCAddress \
-                        -format "%s" NameNodeHTTPAddress \
-                        -format "\n" TRUE }) do |sub|
-      tries+=1
-      sub.each do |line|
-        if line.chomp != ","
-          ipc, http = line.chomp.split(",")
+  
+  if namenode_id != 0
+    tries = 0
+    until not ipc.nil? or tries >= 3
+      # XXX: Race - IPC & HTTP are not set atomically
+      IO.popen(%{condor_q -constraint 'ClusterId == #{namenode_id}' \
+                          -format "%s," NameNodeIPCAddress \
+                          -format "%s" NameNodeHTTPAddress \
+                          -format "\n" TRUE }) do |sub|
+        tries+=1
+        sub.each do |line|
+          if line.chomp != ","
+            ipc, http = line.chomp.split(",")
+          end
         end
+        sleep 3
       end
-      sleep 3
     end
+  else
+    ipc = http = options[:idraw]   
   end
 
   if ipc.nil?
@@ -59,7 +64,7 @@ def start(options)
   puts "Found NameNode at #{ipc}"
 
   (1..options.fetch(:count, 1)).each do 
-    IO.popen(%{condor_submit -a "+NameNode=#{namenode_id}" -a '+NameNodeHTTPAddress="#{http}"' -a NameNodeAddress=#{ipc} hdfs_datanode.job}) do |sub|
+    IO.popen(%{condor_submit -a "+NameNode=#{namenode_id}" -a '+NameNodeURL="#{http}"' -a NameNodeAddress=#{ipc} hdfs_datanode.job}) do |sub|
       sub.each do |line|
         puts line
       end
@@ -85,9 +90,10 @@ optparse = OptionParser.new do |opts|
     options[:action] = :list
     options[:id] = v.to_i if not v.nil?
   end
-  opts.on("-s", "--start=ID", "Start a new DataNode, attached to given NameNode") do |v|
+  opts.on("-s", "--start=ID", "Start a new DataNode, attached to given NameNode (url/ClusterId)") do |v|
     options[:action] = :start
     options[:id] = v.to_i
+    options[:idraw] = v
   end
   opts.on("-c", "--count=COUNT", "Start multiple new DataNodes") do |v|
     options[:count] = v.to_i
