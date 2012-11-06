@@ -4,19 +4,23 @@
 +HadoopType = "JobTracker"
 
 cmd = mapred_jobtracker.sh
-args = hadoop-1.0.1-bin.tar.gz $(NameNodeAddress)
+args = $(HadoopBinTarBall) $(NameNodeAddress)
 
-transfer_input_files = hadoop-1.0.1-bin.tar.gz
+transfer_input_files = $(HadoopBinTarBall)
 
 # RFE: Ability to get output files even when job is removed
 #transfer_output_files = logs.tgz
 #transfer_output_remaps = "logs.tgz logs.$(cluster).tgz"
-output = jobtracker.$(cluster).out
-error = jobtracker.$(cluster).err
 
-log = jobtracker.$(cluster).log
+output = jobtracker.$(cluster).out.txt
+error = jobtracker.$(cluster).err.txt
+log = jobtracker.$(cluster).log.txt
 
 kill_sig = SIGTERM
+
+# prefer machines with more memory
+# there may be other preferences based on locality.
+rank = memory
 
 # Want chirp functionality
 +WantIOProxy = TRUE

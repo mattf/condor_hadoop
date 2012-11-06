@@ -4,17 +4,21 @@
 +HadoopType = "TaskTracker"
 
 cmd = mapred_tasktracker.sh
-args = hadoop-1.0.1-bin.tar.gz $(JobTrackerAddress)
+args = $(HadoopBinTarBall) $(JobTrackerAddress)
 
-transfer_input_files = hadoop-1.0.1-bin.tar.gz
+transfer_input_files = $(HadoopBinTarBall)
 
 # RFE: Ability to get output files even when job is removed
 #transfer_output_files = logs.tgz
 #transfer_output_remaps = "logs.tgz logs.$(cluster).tgz"
-output = tasktracker.$(cluster).out
-error = tasktracker.$(cluster).err
 
-log = tasktracker.$(cluster).log
+output = tasktracker.$(cluster).out.txt
+error = tasktracker.$(cluster).err.txt
+log = tasktracker.$(cluster).log.txt
+
+# prefer speedy machines, but I'm guessing network is more 
+# important.
+rank = Mips
 
 kill_sig = SIGTERM
 

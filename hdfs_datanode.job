@@ -4,19 +4,30 @@
 +HadoopType = "DataNode"
 
 cmd = hdfs_datanode.sh
-args = hadoop-1.0.1-bin.tar.gz $(NameNodeAddress)
+args = $(HadoopBinTarBall) $(NameNodeAddress)
 
-transfer_input_files = hadoop-1.0.1-bin.tar.gz
+transfer_input_files = $(HadoopBinTarBall)
 
 # RFE: Ability to get output files even when job is removed
 #transfer_output_files = logs.tgz
 #transfer_output_remaps = "logs.tgz logs.$(cluster).tgz"
-output = datanode.$(cluster).out
-error = datanode.$(cluster).err
 
-log = datanode.$(cluster).log
+output = datanode.$(cluster).out.txt
+error = datanode.$(cluster).err.txt
+log = datanode.$(cluster).log.txt
 
 kill_sig = SIGTERM
+
+# prefer machines with more disk space (Network is important too!)
+# So in reality it would be the sum of it's parts, but we would need 
+# custom startd attributes to enable.
+# .4*disk + .5*bandwith + .1*locality 
+rank = disk
+
+# This is a temporary method which says we want the data nodes to have at least 
+# 65% of the nodes disk space.  This will prevent other data nodes from landing on the 
+# same machine while still allowing other non data intensive jobs to land  
+request_disk = floor(.65 * Target.TotalDisk)
 
 # Want chirp functionality
 +WantIOProxy = TRUE

@@ -57,7 +57,14 @@ end
 
 
 def start(options)
-  IO.popen(%{condor_submit hdfs_namenode.job}) do |sub|
+  hadoop_file = ( options[:file] == nil ? ENV['HADOOP_BIN_TARBALL']: options[:file] )
+
+  if hadoop_file.nil?
+    puts "hadoop-X.Y.X-bin.tar.gz required! Please specify via --file= ,or set the HADOOP_BIN_TARBALL environment variable"
+    exit 1
+  end
+
+  IO.popen(%{condor_submit -a HadoopBinTarBall='#{hadoop_file}' hdfs_namenode.job}) do |sub|
     sub.each do |line|
       puts line
     end
@@ -86,6 +93,9 @@ optparse = OptionParser.new do |opts|
     options[:action] = :ipc
     options[:id] = v.to_i
   end
+  opts.on("-f", "--file=hadoop-bin.tar.gz", "Specify tarball or set HADOOP_BIN_TARBALL in your env") do |f|
+    options[:file] = f 
+  end
   opts.on("-s", "--start", "Start a new NameNode") do
     options[:action] = :start
   end
@@ -105,6 +115,12 @@ begin
     puts optparse
     exit
   end
+  puts "********************************************************************************"
+  puts "WARNING: This tool should be used for *evaluation purposes only* as the data"
+  puts "will be removed on job exit. If you care about your data then it is recommended"
+  puts "to create a vm, or use submission template."
+  puts "********************************************************************************"
+  puts ""
 rescue OptionParser::InvalidOption,
        OptionParser::InvalidArgument,
        OptionParser::MissingArgument

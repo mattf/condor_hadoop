@@ -1,16 +1,19 @@
 +HadoopType = "NameNode"
 
 cmd = hdfs_namenode.sh
-args = hadoop-1.0.1-bin.tar.gz
+args = $(HadoopBinTarBall)
 
-transfer_input_files = hadoop-1.0.1-bin.tar.gz
+transfer_input_files = $(HadoopBinTarBall)
 
-#output = namenode.$(cluster).out
-#error = namenode.$(cluster).err
-
-log = namenode.$(cluster).log
+output = namenode.$(cluster).out.txt
+error = namenode.$(cluster).err.txt
+log = namenode.$(cluster).log.txt
 
 kill_sig = SIGTERM
+
+# Choose a machine with lots of memory and take it over.
+rank = memory
+request_memory = Target.Memory
 
 # Want chirp functionality
 +WantIOProxy = TRUE
