@@ -5,10 +5,9 @@ args = $(HadoopBinTarBall)
 
 transfer_input_files = $(HadoopBinTarBall)
 
-#output = namenode.$(cluster).out
-#error = namenode.$(cluster).err
-
-log = namenode.$(cluster).log
+output = namenode.$(cluster).out.txt
+error = namenode.$(cluster).err.txt
+log = namenode.$(cluster).log.txt
 
 kill_sig = SIGTERM
 

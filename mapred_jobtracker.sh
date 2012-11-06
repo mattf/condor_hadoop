@@ -18,8 +18,18 @@ function term {
    ./bin/hadoop-daemon.sh stop jobtracker
 }
 
+# In cases where folks want to test before running through condor
+if [ -z "$_CONDOR_SCRATCH_DIR" ]; then
+    echo "Environment variable _CONDOR_SCRATCH_DIR is empty and required to run script"
+    exit 1
+fi
+
 # Unpack
 tar xzfv $HADOOP_TARBALL
+if [ $? -ne 0 ]; then
+    echo "Failed to extract $HADOOP_TARBALL"
+    exit 1
+fi 
 
 # Move into tarball, inefficiently
 cd $(tar tzf $HADOOP_TARBALL | head -n1)
@@ -53,6 +63,10 @@ export HADOOP_LOG_DIR=$_CONDOR_SCRATCH_DIR/logs
 export HADOOP_PID_DIR=$PWD
 
 ./bin/hadoop-daemon.sh start jobtracker
+if [ $? -ne 0 ]; then
+    echo "Failed to start jobtracker"
+    exit 1
+fi
 
 # Wait for pid file
 PID_FILE=$(echo hadoop-*-jobtracker.pid)
@@ -79,7 +93,18 @@ fi
 
 # Record the port number where everyone can see it
 condor_chirp set_job_attr JobTrackerIPCAddress \"maprfs://$my_hostname:$IPC_PORT\"
+if [ $? -ne 0 ]; then
+    echo "Failed to chirp update, exiting"
+    term
+    exit 1
+fi
+
 condor_chirp set_job_attr JobTrackerHTTPAddress \"http://$my_hostname:$HTTP_PORT\"
+if [ $? -ne 0 ]; then
+    echo "Failed to chirp update, exiting"
+    term
+    exit 1
+fi
 
 # While namenode is running, collect and report back stats
 while kill -0 $PID; do
