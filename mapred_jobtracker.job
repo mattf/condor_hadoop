@@ -11,10 +11,10 @@ transfer_input_files = $(HadoopBinTarBall)
 # RFE: Ability to get output files even when job is removed
 #transfer_output_files = logs.tgz
 #transfer_output_remaps = "logs.tgz logs.$(cluster).tgz"
-output = jobtracker.$(cluster).out
-error = jobtracker.$(cluster).err
 
-log = jobtracker.$(cluster).log
+output = jobtracker.$(cluster).out.txt
+error = jobtracker.$(cluster).err.txt
+log = jobtracker.$(cluster).log.txt
 
 kill_sig = SIGTERM
 

@@ -21,8 +21,19 @@ function term {
 #   cp logs.tgz $_CONDOR_SCRATCH_DIR
 }
 
+# In cases where folks want to test before running through condor
+if [ -z "$_CONDOR_SCRATCH_DIR" ]; then
+    echo "Environment variable _CONDOR_SCRATCH_DIR is empty and required to run script"
+    exit 1
+fi
+
 # Unpack
 tar xzfv $HADOOP_TARBALL
+if [ $? -ne 0 ]; then
+    echo "Failed to extract $HADOOP_TARBALL"
+    exit 1
+fi 
+
 
 # Move into tarball, inefficiently
 cd $(tar tzf $HADOOP_TARBALL | head -n1)
@@ -63,7 +74,12 @@ trap term SIGTERM
 export HADOOP_CONF_DIR=$PWD/conf
 export HADOOP_PID_DIR=$PWD
 export HADOOP_LOG_DIR=$_CONDOR_SCRATCH_DIR/logs
+
 ./bin/hadoop-daemon.sh start datanode
+if [ $? -ne 0 ]; then
+    echo "Failed to start datanode"
+    exit 1
+fi 
 
 # Wait for pid file
 PID_FILE=$(echo hadoop-*-datanode.pid)

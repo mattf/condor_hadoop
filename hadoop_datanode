@@ -58,13 +58,12 @@ def start(options)
         sleep 3
       end
     end
+    if ipc.nil?
+      puts "Could not find IPC address for #{namenode_id}, make sure it is running."
+      exit
+    end
   else
     ipc = http = options[:idraw]   
-  end
-
-  if ipc.nil?
-    puts "Could not find IPC address for #{namenode_id}, make sure it is running."
-    exit
   end
 
   puts "Found NameNode at #{ipc}"
