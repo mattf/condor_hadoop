@@ -3,7 +3,8 @@
 # condor_chirp in /usr/libexec/condor
 export PATH=$PATH:/usr/libexec/condor
 
-HADOOP_TARBALL=$1
+HADOOP_FULL_TARBALL=$1
+HADOOP_TARBALL=${HADOOP_FULL_TARBALL##*/}
 
 # Note: bin/hadoop uses JAVA_HOME to find the runtime and tools.jar,
 #       except tools.jar does not seem necessary therefore /usr works

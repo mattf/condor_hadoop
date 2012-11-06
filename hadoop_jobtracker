@@ -58,7 +58,13 @@ end
 
 def start(options)
   namenode_id = options[:id]
+  hadoop_file = ( options[:file] == nil ? ENV['HADOOP_BIN_TARBALL']: options[:file] )
 
+  if hadoop_file.nil?
+    puts "hadoop-X.Y.X-bin.tar.gz required! Please specify via --file= ,or set the HADOOP_BIN_TARBALL environment variable"
+    exit 1
+  end
+  
   ipc = http = nil
 
   if namenode_id != 0
@@ -94,7 +100,7 @@ def start(options)
   # XXX: Not adding +NameNode=#{namenode_id} to avoid being cleaned up
   #      when NameNode is, because of difficulty in also cleaning up
   #      TaskTrackers
-  IO.popen(%{condor_submit -a '+NameNodeHTTPAddress="#{http}"' -a NameNodeAddress=#{ipc} mapred_jobtracker.job}) do |sub|
+  IO.popen(%{condor_submit -a HadoopBinTarBall='#{hadoop_file}' -a '+NameNodeHTTPAddress="#{http}"' -a NameNodeAddress=#{ipc} mapred_jobtracker.job}) do |sub|
     sub.each do |line|
       puts line
     end
@@ -123,6 +129,9 @@ optparse = OptionParser.new do |opts|
   opts.on("-i", "--ipc=ID", Numeric, "Get JobTracker IPC address") do |v|
     options[:action] = :ipc
     options[:id] = v.to_i
+  end
+  opts.on("-f", "--file=hadoop-bin.tar.gz", "Specify a specific hadoop tarball") do |f|
+    options[:file] = f 
   end
   opts.on("-s", "--start=ID", "Start a new JobTracker, attached to given NameNode (url/ClusterId)") do |v|
     options[:action] = :start
