@@ -96,7 +96,7 @@ optparse = OptionParser.new do |opts|
     options[:action] = :list
     options[:id] = v.to_i if not v.nil?
   end
-  opts.on("-s", "--start=ID", "Start a new DataNode, attached to given NameNode (url/ClusterId)") do |v|
+  opts.on("-s", "--start=ID", "Start a new DataNode, attached to given NameNode (hdfs:// or ID)") do |v|
     options[:action] = :start
     options[:id] = v.to_i
     options[:idraw] = v
