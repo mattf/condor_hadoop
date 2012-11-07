@@ -14,17 +14,23 @@ def list(options)
                       -format "%d," EnteredCurrentStatus \
                       -format "%s," Owner \
                       -format "%d," NameNode \
-                      -format "%s" NameNodeURL \
+                      -format "%s," NameNodeHTTPAddress \
+                      -format "%s" NameNodeIPCAddress \
                       -format "\n" TRUE}) do |sub|
     printf "  ID    Submitted   Status       Uptime      Owner  NameNode\n"
     sub.each do |line|
-      id, qdate, status, time, owner, namenode_id, http = line.chomp.split(",")
-      printf "%4d %12s %8s %12s %10.9s  %d @ %s\n",
+      id, qdate, status, time, owner, namenode_id, http, ipc = line.chomp.split(",")
+      printf "%4d %12s %8s %12s %10.9s  ",
              id,
              Time.at(qdate.to_i).strftime("%d/%m %H:%M"),
              status.to_i.state_name,
              status.to_i == 2 ? (Time.now()-time.to_i).to_i.duration : "N/A",
-             owner, namenode_id, http
+             owner
+      if http.empty?
+        printf "%s\n", ipc
+      else
+        printf "%d @ %s\n", namenode_id, http
+      end
     end
   end
 end
@@ -53,7 +59,7 @@ def start(options)
       end
     end
   else
-    ipc = http = options[:idraw]   
+    ipc = options[:idraw]
   end
 
   if ipc.nil?
@@ -64,7 +70,7 @@ def start(options)
   puts "Found NameNode at #{ipc}"
 
   (1..options.fetch(:count, 1)).each do 
-    IO.popen(%{condor_submit -a "+NameNode=#{namenode_id}" -a '+NameNodeURL="#{http}"' -a NameNodeAddress=#{ipc} hdfs_datanode.job}) do |sub|
+    IO.popen(%{condor_submit -a "+NameNode=#{namenode_id}" -a '+NameNodeHTTPAddress="#{http}"' -a '+NameNodeIPCAddress="#{ipc}"' -a NameNodeAddress=#{ipc} hdfs_datanode.job}) do |sub|
       sub.each do |line|
         puts line
       end
