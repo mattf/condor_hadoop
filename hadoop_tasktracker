@@ -94,7 +94,7 @@ optparse = OptionParser.new do |opts|
     options[:action] = :list
     options[:id] = v.to_i if not v.nil?
   end
-  opts.on("-s", "--start=ID", "Start a new TaskTracker, attached to given JobTracker (url/ClusterId)") do |v|
+  opts.on("-s", "--start=ID", "Start a new TaskTracker, attached to given JobTracker (maprfs:// or ID)") do |v|
     options[:action] = :start
     options[:id] = v.to_i
     options[:idraw] = v
