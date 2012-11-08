@@ -40,6 +40,11 @@ Tools provided -
    --stop <id>               :  Stop the given TaskTracker
 
 
+WARNING: No data stored in the running NameNode will be retained when
+the NameNode is shutdown. If you expect otherwise, you will be
+disappointed.
+
+
 Example usage -
 
 Setup,

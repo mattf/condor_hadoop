@@ -115,12 +115,6 @@ begin
     puts optparse
     exit
   end
-  puts "********************************************************************************"
-  puts "WARNING: This tool should be used for *evaluation purposes only* as the data"
-  puts "will be removed on job exit. If you care about your data then it is recommended"
-  puts "to create a vm, or use submission template."
-  puts "********************************************************************************"
-  puts ""
 rescue OptionParser::InvalidOption,
        OptionParser::InvalidArgument,
        OptionParser::MissingArgument
