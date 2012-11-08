@@ -12,12 +12,14 @@ Tools provided -
  hadoop_namenode             : Manage NameNodes
    --list        	     :  List all NameNodes
    --ipc <id>    	     :  Retrieve IPC endpoint for NameNode <id>
+   --file=hadoop-bin.tar.gz  :  Required: Specify tarball or set HADOOP_BIN_TARBALL
    --start       	     :  Start a new NameNode
    --stop <id>   	     :  Stop the given NameNode
 
  hadoop_datanode             : Manage DataNodes
    --list [<namenode id>]    :  List DataNodes, optionally associated
                              :   with a given NameNode
+   --file=hadoop-bin.tar.gz  :  Required: Specify tarball or set HADOOP_BIN_TARBALL
    --start <ID>|<URL>        :  Start a new DataNode, linked hdfs:// or ID
     [--count <#>]            :   NameNode, potentially numerous
    --stop <id>               :  Stop the given DataNode
@@ -25,12 +27,14 @@ Tools provided -
  hadoop_jobtracker           : Manage JobTrackers
    --list                    :  List all JobTrackers
    --ipc <id>                :  Retrieve IPC endpoint for JobTracker <id>
+   --file=hadoop-bin.tar.gz  :  Required: Specify tarball or set HADOOP_BIN_TARBALL
    --start <ID>|<URL>        :  Start a new JobTracker, linked hdfs:// or ID
    --stop <id>               :  Stop the given JobTracker
 
  hadoop_tasktracker          : Manage TaskTrackers
    --list [<jobtracker id>]  :  List TaskTrackers, optionally
                              :   associated with a given JobTracker
+   --file=hadoop-bin.tar.gz  :  Required: Specify tarball or set HADOOP_BIN_TARBALL
    --start <ID>|<URL>        :  Start a new TaskTracker, linked maprfs:// or ID
     [--count <#>]            :   given JobTracker, potentially numerous
    --stop <id>               :  Stop the given TaskTracker
@@ -42,6 +46,7 @@ Setup,
 
 $ wget http://archive.apache.org/dist/hadoop/core/hadoop-1.0.1/hadoop-1.0.1-bin.tar.gz
 ...
+$ export HADOOP_BIN_TARBALL=hadoop-1.0.1-bin.tar.gz 
 
 Start a NameNode,
 
