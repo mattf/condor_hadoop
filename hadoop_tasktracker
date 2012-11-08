@@ -1,31 +1,30 @@
 #!/usr/bin/ruby
 
 require 'optparse'
+require_relative 'numeric_duration'
+require_relative 'numeric_state_name'
 
 
 def list(options)
   filter = options[:id].nil? ? '' : %{&& JobTracker =?= #{options[:id]}}
-  IO.popen(%{
-     condor_q -constraint 'HadoopType =?= "TaskTracker" #{filter}' \
-              -format "%4d" ClusterId \
-              -format " %12s" 'formatTime(QDate, "%d/%m %H:%M")' \
-              -format " %8s" 'ifThenElse(JobStatus == 1, "Pending", 
-                                        ifThenElse(JobStatus == 2, "Running",
-                                          ifThenElse(JobStatus == 3 || JobStatus == 4,
-                                                     "Exiting",
-                                                     "Error")))' \
-              -format " %12s" 'ifThenElse(JobStatus == 2,
-                                                  interval(time() - EnteredCurrentStatus),
-                                                  "N/A")' \
-              -format " %10.9s" Owner \
-              -format "  %d" JobTracker \
-              -format " @ %s" 'ifThenElse(JobTrackerHTTPAddress =?= UNDEFINED || JobStatus =!= 2,
-                                                 "N/A",
-                                                 JobTrackerHTTPAddress)' \
-              -format "\n" TRUE}) do |sub|
+  IO.popen(%{condor_q -constraint 'HadoopType =?= "TaskTracker" #{filter}' \
+                      -format "%d," ClusterId \
+                      -format "%s," QDate \
+                      -format "%d," JobStatus \
+                      -format "%s," EnteredCurrentStatus \
+                      -format "%s," Owner \
+                      -format "%d," JobTracker \
+                      -format "%s" JobTrackerHTTPAddress \
+                      -format "\n" TRUE}) do |sub|
     printf "  ID    Submitted   Status       Uptime      Owner  JobTracker\n"
     sub.each do |line|
-      puts line
+      id, qdate, status, time, owner, jobtracker_id, http = line.chomp.split(",")
+      printf "%4d %12s %8s %12s %10.9s  %d @ %s\n",
+             id,
+             Time.at(qdate.to_i).strftime("%d/%m %H:%M"),
+             status.to_i.state_name,
+             status.to_i == 2 ? (Time.now()-time.to_i).to_i.duration : "N/A",
+             owner, jobtracker_id, http
     end
   end
 end
