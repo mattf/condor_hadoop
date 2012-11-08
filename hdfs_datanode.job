@@ -4,9 +4,9 @@
 +HadoopType = "DataNode"
 
 cmd = hdfs_datanode.sh
-args = hadoop-1.0.1-bin.tar.gz $(NameNodeAddress)
+args = $(HadoopBinTarBall) $(NameNodeAddress)
 
-transfer_input_files = hadoop-1.0.1-bin.tar.gz
+transfer_input_files = $(HadoopBinTarBall)
 
 # RFE: Ability to get output files even when job is removed
 #transfer_output_files = logs.tgz
