@@ -1,9 +1,8 @@
 #!/usr/bin/ruby
 
 require 'optparse'
-require_relative 'numeric_duration'
-require_relative 'numeric_state_name'
-
+require File.join(File.dirname(__FILE__), './numeric_duration')
+require File.join(File.dirname(__FILE__), './numeric_state_name')
 
 def list(options)
   filter = options[:id].nil? ? '' : %{&& NameNode =?= #{options[:id]}}
