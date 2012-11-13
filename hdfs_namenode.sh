@@ -97,11 +97,11 @@ HTTP_PORT=$(grep "Jetty bound to port" $LOG_FILE | sed 's/.* to port \(.*\)$/\1/
 
 my_hostname=$(hostname -f)
 
-curl --connect-timeout 3 --silent http://169.254.169.254/2012-01-12
-if [ $? -eq 0 ]; then
-  my_hostname=$(curl http://169.254.169.254/2012-01-12/meta-data/public-hostname)
-  echo "Found EC2 public hostname: $my_hostname"
-fi
+#curl --connect-timeout 3 --silent http://169.254.169.254/2012-01-12
+#if [ $? -eq 0 ]; then
+#  my_hostname=$(curl http://169.254.169.254/2012-01-12/meta-data/public-hostname)
+#  echo "Found EC2 public hostname: $my_hostname"
+#fi
 
 # Record the port number where everyone can see it
 condor_chirp set_job_attr NameNodeIPCAddress \"hdfs://$my_hostname:$IPC_PORT\"
